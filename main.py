@@ -1,8 +1,45 @@
 import flet as ft
 from asyncio import sleep
-from AI import search_btn
+# from AI import search_btn
 from pyautogui import click
-from UI import Frame
+# from UI import Frame
+
+class Frame(ft.Container):
+    def __init__(self,obj:list=[],label_text="Frame",label_icon=ft.icons.CIRCLE_OUTLINED):
+        super().__init__()
+
+        self.obj = obj
+        self.label_text = label_text
+        self.label_icon = label_icon
+
+        self.bgcolor='grey900'
+        self.padding=20
+        self.border_radius=20
+        self.content=ft.Column(
+            [
+                ft.Row([ft.Icon(name=self.label_icon),ft.Text(self.label_text,size=20)]),
+                *self.obj
+            ]
+        )
+
+from ultralytics import YOLO
+import cv2 
+import numpy as np
+import pyautogui
+
+model = YOLO("assets/EntryAI.pt")
+
+def search_btn():
+    img = pyautogui.screenshot()
+    img = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)
+    result = model(img)
+    cls = result[0].boxes.cls.cpu().numpy().astype(int)
+    if len(cls) > 0:
+        box = result[0].boxes.xyxy.cpu().numpy().astype(int)
+        box = box[0]
+        return box
+    return []
+
 
 class SearchFrame(Frame):
     
@@ -86,18 +123,23 @@ class SettingFrame(Frame):
             label_icon=ft.icons.SETTINGS
             )
     
+class MainPage(ft.Column):
+    def __init__(self,page:ft.Page):
+        super().__init__()
+        self.page = page
 
+        self.search_frame = SearchFrame(self.page)
+        self.setting_frame = SettingFrame(self.page)
+
+        self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+        self.controls = [ self.search_frame, self.setting_frame ]
 def main(page:ft.Page):
     page.title = "Entry"
     page.window.resizable = False
     page.window.width = 400
     page.window.height = 500 
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.theme = ft.Theme(color_scheme_seed="yellow700")
-    page.update()
-    search_frame = SearchFrame(page)
-    # setting_frame = SettingFrame(page)
-    page.add(search_frame,setting_frame)
+    page.add(MainPage(page))
+    
 
-if __name__ == '__main__':
-    ft.app(target=main)
+ft.app(target=main)

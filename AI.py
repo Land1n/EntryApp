@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import pyautogui
 
-model = YOLO("EntryAI.pt")
+model = YOLO("assets/EntryAI.pt")
 
 def search_btn():
     img = pyautogui.screenshot()
